@@ -22,3 +22,6 @@ only contain a value and a pointer in their simplest form:
 Explore the different folders in src/ to see the different attempts to implement
 those beast. I should *warn* you here: Almost every example is useless and
 intentionally wrong. You've been warned.
+
+- linked1: Value Only Linked Lists. 
+  What happens if we refuse to use pointers at all costs?
