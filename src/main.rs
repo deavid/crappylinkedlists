@@ -1,4 +1,5 @@
 mod linked1;
+mod linked2;
 
 fn linked1_probes() {
     use linked1::*;
@@ -14,6 +15,11 @@ fn linked1_probes() {
     size_oi64();
 }
 
+fn linked2_probes() {
+    // use linked2::*;
+}
+
 fn main() {
     linked1_probes();
+    linked2_probes();
 }

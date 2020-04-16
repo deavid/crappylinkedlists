@@ -25,3 +25,5 @@ intentionally wrong. You've been warned.
 
 - linked1: Value Only Linked Lists. 
   What happens if we refuse to use pointers at all costs?
+- linked2: Stack-pointer Linked Lists.
+  What if everything has to have a lifetime?

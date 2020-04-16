@@ -2,7 +2,9 @@
 use std::mem::size_of;
 /* 
 Value-Only Linked Lists
-==========================
+===========================================================================
+
+What happens if we refuse to use pointers at all costs?
 
 Let's say we don't want pointers. Just regular values. This implies that the
 next value is not a pointer but the actual value.
