@@ -308,7 +308,7 @@ type Node4<'a> = LinkedList2<'a>;
 
 struct LinkedList4<'a> {
     pub first: Option<&'a Node4<'a>>,
-    data: Vec<Node4<'a>>,
+    pub data: Vec<Node4<'a>>,
 }
 
 /*
@@ -321,4 +321,81 @@ But I want to retain my sanity (up to a point), and I hope you'll agree here.
 
 I've aliased LinkedList2 to Node4, because it's the same code, same data.
 There's no need to repeat ourselves.
+
+You might ask, why the data is Vec<Node4> and not Vec<&mut Node4>. Both should
+work, but the latter implies that the caller still has ownership and has to
+handle memory allocation; then we would have our vector of pointers. This adds
+another layer of complexity that is not needed. It's simpler to everyone if 
+we just own and hold it inside.
+
+Another question here is, how this schema is going to make take_mut() easier to
+code. That's because Rust borrow checker is going to "lock" the whole list
+when we try to obtain mutable access to anything. So, from this list, only
+a single item is going to be able to be changed at a time.
+
+If we wanted to be able to hold several mutable pointers at once we should wrap
+the actual values into RefCell<T>, this structure is a non-thread lock that can
+allow many readers and one writer at runtime, panicking if that's not met. It's
+really cheap, because it only increments or decrements a number when the lock
+is obtained or released. But then the "next" inside Node4 must also be a RefCell
+because if not you'll never know if someone is reading while you're writting.
+
+And then, this approach is not that needed anymore, because you could mutate
+from the nodes themselves. There's not much need for a structure like this for
+holding ownership and mutability anymore; of course it is always helpful to have
+a wrapper around the nodes, but that's a different story.
+
+We'll see a RefCell version later, for now let's get crazy once again:
+*/
+impl<'a> LinkedList4<'a> {
+    fn new() -> Self {
+        LinkedList4 {
+            first: None,
+            data: vec![],
+        }
+    }
+    fn tail(&self) -> Option<&Node4> {
+        self.first.map(|f| f.tail())
+    }
+    fn tail_idx(&mut self) -> Option<usize> {
+        match self.tail() {
+            None => None,
+            Some(tail) => {
+                for (i, n) in self.data.iter().enumerate() {
+                    if n as *const Node4 == tail as *const Node4 {
+                        return Some(i)
+                    }
+                }
+                None
+            }
+        }
+    }
+
+    fn append(&'a mut self, value: i64) {
+        self.data.push(Node4 {
+            value,
+            next: None,
+        });
+        if let Some(i) = self.tail_idx() {
+            let last = self.data.last().clone();
+            //         ----------------
+            //         |
+            //         immutable borrow occurs here
+            //         argument requires that `self.data` is borrowed for `'a`            
+            // if let Some(mut tail) = self.data.get_mut(i) {
+            //     tail.next = last; 
+            // }
+        }       
+    }
+}
+/*
+At least to me, this looks impossible to fix. The borrow checker is not going
+to prove that data.last() and data.get_mut() do not retrieve the same address.
+Also, the borrow checker borrows the full data vector, so basically it's not
+possible to write to it while reading from it.
+
+Storing that reference elsewhere isn't going to help either. Even if you manage
+to create a second Vec<&Node4> and put all the references there, the original
+Vec<Node4> would be locked for read-only the whole time. (I don't think this is
+even possible to do)
 */

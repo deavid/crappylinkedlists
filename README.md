@@ -27,3 +27,32 @@ intentionally wrong. You've been warned.
   What happens if we refuse to use pointers at all costs?
 - linked2: Stack-pointer Linked Lists.
   What if everything has to have a lifetime?
+
+Reference to the different modes of storing data in Rust
+==========================================================
+
+Values
+-------
+
+When we store values directly, those are copied or moved onto their places.
+For short and simple datatypes this is convenient. It takes the same to copy
+an i64 than to write a pointer to it (because they're the same size).
+
+However, on a struct copying it would mean to do several CPU cycles to write on
+the memory. If the struct is small this is acceptable. If it's big, it will take
+a lot of time on each write. And those copies happen usually on reads as well.
+
+In those cases you should return a reference instead, so the value cannot be 
+copied.
+
+References
+-------------
+
+Storing references is tricky because they have a lifetime and you have to prove
+for the whole lifetime of the program that the pointer would be valid.
+
+This implies that some sort of lifetime declaration has to be made and when
+variables are created locally they're destructed on function exit.
+
+Mutable references are even tricker because you can only have one, and during
+that time, no immutable references are allowed.
