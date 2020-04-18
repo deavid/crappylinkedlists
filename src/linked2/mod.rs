@@ -1,6 +1,6 @@
 #![allow(dead_code)]
-/* 
-Stack-pointer Linked Lists
+/*
+Reference Linked Lists
 ===========================================================================
 
 What if everything has to have a lifetime?
@@ -21,7 +21,7 @@ lifetime:
 struct LinkedList1 {
     value: i64,
     next: Option<&LinkedList1>,
-    //           ^ expected named lifetime parameter    
+    //           ^ expected named lifetime parameter
 }
 
 There are two ways for fixing this, one is to have a 'static lifetime and the
@@ -36,7 +36,7 @@ pub struct LinkedList1 {
 
 /*
 This works, but it has the problem that the reference has to be static, this
-means that the object this pointer refers to is valid for the whole program. 
+means that the object this pointer refers to is valid for the whole program.
 So it's never cleaned up.
 
 See what happens:
@@ -52,7 +52,7 @@ fn test_ll1() {
     //     ^^^
     //     |
     //     borrowed value does not live long enough
-    //     requires that `n1` is borrowed for `'static`        
+    //     requires that `n1` is borrowed for `'static`
     // };
 
     static N1: LinkedList1 = LinkedList1 {
@@ -72,7 +72,7 @@ fn test_ll1() {
 }
 
 /*
-This is a bit useless because N1 value is effectively being built inside the 
+This is a bit useless because N1 value is effectively being built inside the
 binary and is into memory from the start to the end of the program. For some
 values, sometimes, this does make sense. But for LinkedLists this is absurd.
 
@@ -81,7 +81,7 @@ So we have to go with the generics approach to define a lifetime:
 
 pub struct LinkedList2<'a> {
     value: i64,
-    next: Option<&'a LinkedList2<'a>>
+    next: Option<&'a LinkedList2<'a>>,
 }
 
 /*
@@ -90,24 +90,20 @@ on the Option. First, we define the lifetime of the borrow itself as &'a, then
 we also define the lifetime inside LinkedList2 as <'a>. What does this mean?
 
 It means that the parent and children shoult have the same lifetime, or to be
-more precise, the children lifetime must outlive the parent. 
+more precise, the children lifetime must outlive the parent.
 
 This makes sense. The parent cannot be freed if it has children, so the parent
 must outlive them.
 
 The size of this struct is going to be two words (16bytes). The first word is
-the value, and the next word is the pointer to memory. 
+the value, and the next word is the pointer to memory.
 
 Let's begin with an implementation for this:
 */
 impl<'a> LinkedList2<'a> {
-
     /* The constructor is quite simple: */
     pub fn new(value: i64, next: Option<&'a LinkedList2<'a>>) -> Self {
-        LinkedList2 {
-            value,
-            next,
-        }
+        LinkedList2 { value, next }
     }
 
     /* Some getters and setters for public access: */
@@ -124,8 +120,8 @@ impl<'a> LinkedList2<'a> {
         self.next = next;
     }
 }
-/* 
-Now onto interesting stuff, how do we implement an iterator? 
+/*
+Now onto interesting stuff, how do we implement an iterator?
 
 We will need a struct that can hold the current position or we'll consume
 our own items while iterating. Because of this, we will need a function
@@ -149,7 +145,7 @@ impl<'a> Iterator for IterLinkedList2<'a> {
     type Item = i64;
 
     fn next(&mut self) -> Option<Self::Item> {
-        /* We get the return value. Using map() we can translate from 
+        /* We get the return value. Using map() we can translate from
         Option<LinkedList> to Option<c.value(i64)> */
         let ret = self.cursor.map(|c| c.value);
         /* Now we have to advance the cursor to the next item. Flatten is used
@@ -178,14 +174,14 @@ impl<'a> LinkedList2<'a> {
     //     }
     //     cur
     // }
-    
+
     /* Insert is more complicated. We want to insert after this item */
     fn insert(&mut self, item: &'a mut LinkedList2) -> Option<&Self> {
         /* first switch our next with that item */
         let oldnext = self.next.replace(item);
         /* now we need to add the remaining part of the list at the end */
         let _tail = item.tail();
-        /* And fails again, because tail() is not mutable, we can't add 
+        /* And fails again, because tail() is not mutable, we can't add
         ourselves there: */
         // tail.next.replace(oldnext);
 
@@ -210,10 +206,7 @@ struct LinkedList3<'a> {
 
 impl<'a> LinkedList3<'a> {
     pub fn new(value: i64, next: Option<&'a mut LinkedList3<'a>>) -> Self {
-        LinkedList3 {
-            value,
-            next,
-        }
+        LinkedList3 { value, next }
     }
     pub fn value(&self) -> i64 {
         self.value
@@ -276,10 +269,10 @@ impl<'a> LinkedList3<'a> {
 }
 /*
 Does the above code work? I'm not sure, and not even going to bother proving it.
-Even if it works as intended (Rust seems happy about it) it's going to be a 
-really stupid idea. 
+Even if it works as intended (Rust seems happy about it) it's going to be a
+really stupid idea.
 
-If you have to re-do the whole list, just redo it from scratch. 
+If you have to re-do the whole list, just redo it from scratch.
 It's going to be simpler.
 
 So, if the "next" is read-only there's a big problem. If it's mutable we have
@@ -297,7 +290,7 @@ to whom it belongs.
 For read methods, the sparse structure is fine. But for write ones, we could
 leverage a centralized one where the data is hold.
 
-This is going to be the worse implementation ever of LinkedList, closely 
+This is going to be the worse implementation ever of LinkedList, closely
 followed by the monster of stack-only-recursive-generics we did earlier.
 
 Why? Because we will need to use an array or vector to hold the actual data.
@@ -317,7 +310,7 @@ I've used a vector and not an array which is a dynamic structure. It would be
 and not simply letting others to do it for us. And also it would be amazing to
 see them concatenated together, so you could create longer ones by chaining them.
 
-But I want to retain my sanity (up to a point), and I hope you'll agree here. 
+But I want to retain my sanity (up to a point), and I hope you'll agree here.
 
 I've aliased LinkedList2 to Node4, because it's the same code, same data.
 There's no need to repeat ourselves.
@@ -325,7 +318,7 @@ There's no need to repeat ourselves.
 You might ask, why the data is Vec<Node4> and not Vec<&mut Node4>. Both should
 work, but the latter implies that the caller still has ownership and has to
 handle memory allocation; then we would have our vector of pointers. This adds
-another layer of complexity that is not needed. It's simpler to everyone if 
+another layer of complexity that is not needed. It's simpler to everyone if
 we just own and hold it inside.
 
 Another question here is, how this schema is going to make take_mut() easier to
@@ -363,7 +356,7 @@ impl<'a> LinkedList4<'a> {
             Some(tail) => {
                 for (i, n) in self.data.iter().enumerate() {
                     if n as *const Node4 == tail as *const Node4 {
-                        return Some(i)
+                        return Some(i);
                     }
                 }
                 None
@@ -372,20 +365,17 @@ impl<'a> LinkedList4<'a> {
     }
 
     fn append(&'a mut self, value: i64) {
-        self.data.push(Node4 {
-            value,
-            next: None,
-        });
-        if let Some(i) = self.tail_idx() {
-            let last = self.data.last().clone();
+        self.data.push(Node4 { value, next: None });
+        if let Some(_i) = self.tail_idx() {
+            let _last = self.data.last();
             //         ----------------
             //         |
             //         immutable borrow occurs here
-            //         argument requires that `self.data` is borrowed for `'a`            
+            //         argument requires that `self.data` is borrowed for `'a`
             // if let Some(mut tail) = self.data.get_mut(i) {
-            //     tail.next = last; 
+            //     tail.next = last;
             // }
-        }       
+        }
     }
 }
 /*

@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use std::mem::size_of;
-/* 
+/*
 Value-Only Linked Lists
 ===========================================================================
 
@@ -10,16 +10,16 @@ Let's say we don't want pointers. Just regular values. This implies that the
 next value is not a pointer but the actual value.
 
 The following approach does not work. Values inside an struct are "inlined"
-in memory, so in order to reserve memory for this struct you'll actually 
+in memory, so in order to reserve memory for this struct you'll actually
 need to store the child inside. And because they can be as long as you want,
-that means that you need to reserve "infinite" memory just in case to 
+that means that you need to reserve "infinite" memory just in case to
 guarantee that it fits.
 */
 struct LinkedList1 {
     value: i64,
     // next: Option<LinkedList1>, // <-- recursive type has infinite size
-    /*     help: insert indirection (e.g., a `Box`, `Rc`, or `&`) at some point 
-                 to make `linked1::LinkedList` representable*/
+    /*     help: insert indirection (e.g., a `Box`, `Rc`, or `&`) at some point
+    to make `linked1::LinkedList` representable*/
 }
 
 /*
@@ -40,8 +40,8 @@ struct LinkedList2<T> {
 /* For convenience we call the list "L" */
 type L<T> = LinkedList2<T>;
 
-/* 
-And now we can abuse generics to create buckets of list sizes that can be 
+/*
+And now we can abuse generics to create buckets of list sizes that can be
 chained as long as we want:
 */
 
@@ -87,14 +87,14 @@ pub fn size_stupidthing() {
     println!("Size of StupidThing: {}", size_of::<StupidThing>()) // 16 bytes
 }
 
-/* 
+/*
 So we agree that {i64, i64} is 16 bytes, but {i64, Option<i64>} is 24 bytes.
 But {i64, Option<{i64, Option<i64>>} does not add another 8 bytes of overhead.
 
 Why does this happen? Well, Option has to take some storage, a bit in order
 to store if it has data or not. But because there's memory aligment and
 probably we're all compiling these things in 64bit platforms, you can stack
-up to 8 bytes in a single word. Anything bellow that would need padding. 
+up to 8 bytes in a single word. Anything bellow that would need padding.
 
 Rust is smart and does pack all those bytes together so all the data is aligned.
 
@@ -124,7 +124,7 @@ pub fn size_l65() {
 */
 
 /*
-You might say, this is stupid, it's simply an array [Option<i64>; 8] or 
+You might say, this is stupid, it's simply an array [Option<i64>; 8] or
 whatever. And you will be right. Or is it? Let's check!
 */
 
@@ -133,7 +133,7 @@ pub fn size_a8() {
     println!("Size of A8: {}", size_of::<A8>()) // 128 bytes
 }
 
-/* 
+/*
 It's 128 bytes, not 72 bytes! Rust cannot pack the options together for an
 array, so it's using two words per item.
 */

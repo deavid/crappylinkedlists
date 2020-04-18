@@ -1,5 +1,6 @@
 mod linked1;
 mod linked2;
+mod linked3;
 
 fn linked1_probes() {
     use linked1::*;
@@ -9,17 +10,18 @@ fn linked1_probes() {
     size_stupidthing();
     size_l64();
     // size_l65();
-    size_a8();    
+    size_a8();
     size_op8();
     size_ob8();
     size_oi64();
 }
 
-fn linked2_probes() {
-    // use linked2::*;
+fn linked3_probes() {
+    use linked3::*;
+    test_cell();
 }
 
 fn main() {
     linked1_probes();
-    linked2_probes();
+    linked3_probes();
 }

@@ -25,8 +25,31 @@ intentionally wrong. You've been warned.
 
 - linked1: Value Only Linked Lists. 
   What happens if we refuse to use pointers at all costs?
-- linked2: Stack-pointer Linked Lists.
+- linked2: Reference Linked Lists.
   What if everything has to have a lifetime?
+- linked3: Using `Cell<T>` to handle interior mutability of next
+  So we get our Reference Linked Lists and tweak them so we can actually write.
+
+Why is this code so bad? Doesn't make any sense
+================================================
+
+It doesn't. But for self-referencing types like a linked list do expose a lot
+of problems with the borrow checker. The easy way handling this would be going
+for a `Rc<RefCell<T>>` and forget. But Rc is close to garbage collectors, and
+RefCell also adds an extra write for borrowing.
+
+I wanted to explore how far we can get with as little extra tools as possible,
+doing as much as possible at compile time. Because, programs that are valid on
+compile time and don't do checks in runtime should have better guarantees of
+working properly in any situation. Also, they should be faster too.
+
+This is a learning experience, at least for me. Learning how to do complex stuff
+with the borrow checker without resorting to the "easy mode" should allow me to
+write better Rust programs in the future, understanding better the errors, and
+why Rust compiler behaves the way it does.
+
+Also this is a good training to know what are the different primitives to manage
+memory and which one is best for each scenario.
 
 Reference to the different modes of storing data in Rust
 ==========================================================
@@ -56,3 +79,50 @@ variables are created locally they're destructed on function exit.
 
 Mutable references are even tricker because you can only have one, and during
 that time, no immutable references are allowed.
+
+Option
+--------
+
+When storing references it's easy to notice that Rust does not allow NULL 
+pointers, so usually it's hard to create structures that contain bare references.
+
+This is when Option comes handy as it allows for nullable pointers. Although the
+construction might look complex, it doesn't take extra space for pointers. So
+`Option<&DataStruct>` has the same size as `&DataStruct` and takes the same CPU
+cycles to dereference or construct.
+
+Rust has a lot of boilerplate that tells the compiler how to understand the
+program and prove it correct, but it doesn't add any extra computation or data.
+
+For non-references like `Option<i64>`, the Option will use an extra u64 
+(actually more like an u8 with memory padding for alignment). But nonetheless,
+this cannot be done cheaper in any other language.
+
+Cell
+------------
+
+`Cell<T>` is a cheap way to make a struct member mutable even if we got an
+immutable reference to the struct. This is what is called interior mutability.
+
+Basically it isolates the Cell contents from the struct, so it has its different
+rules for borrowing and mutability.
+
+Cell it's not a holy grail, it doesn't add any runtime cost but has other 
+compile time limitations. Namely, in order to read the contents you must copy
+them. If the contents are not copiable, then you have to destroy the contents
+to read them either by take() or replace().
+
+Because of this, Cell is most useful with types that are actually copiable.
+For example types like u8 and i64 are interesting because they only take one
+CPU cycle to copy. Vectors are not copiable and arrays might be too big to
+be useful. But, turns out that reference pointers are always copiable (&x), so
+if you got a complex, non-copyable structure, the reference pointer can always
+be copied over in a single CPU cycle because its size is `usize`.
+
+This will not give you any grant to mutate the interior data of the struct that
+you're referencing (of course internals can be changed if they're wrapped in a
+Cell), but it allows you to swap the pointer with another.
+
+In short, having an immutable reference isn't a total guarantee that you will
+not be able to change it. There are ways to change the contents if the correct
+types are used.
