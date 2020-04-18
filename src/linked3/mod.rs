@@ -136,6 +136,56 @@ impl<'a> LinkedList1<'a> {
     we would return always one item, in one case with next populated, and in the
     other next would always be None */
     fn replace(&self, item: &'a LinkedList1<'a>, chain: bool) -> Option<&'a LinkedList1<'a>> {
-        unimplemented!();
+        let oldnext = self.next.replace(Some(item));
+        if chain {
+            let tail = item.tail();
+            /* When we use "take" we retrieve the value and leave None in n.next*/
+            let nnext = oldnext.map(|n| n.next.take()).flatten();
+            tail.next.replace(nnext);
+        }
+        oldnext
+    }
+
+    /* Append should be just tail + insert */
+    fn append(&self, item: &'a LinkedList1<'a>) {
+        self.tail().insert(item)
+    }
+
+    /* Remove next should be using next.take */ 
+    fn remove_next(&self) -> Option<&'a LinkedList1<'a>> {
+        let ret = self.next.take();
+        if let Some(r) = ret {
+            /* We remove the "next" value from the return object and place it
+            as our own next:
+
+            Original chain: A -> B -> C
+            New chain: A -> C
+            Return chain: B
+            */
+            let ret_next = r.next.take();
+            self.next.replace(ret_next);
+        }
+        ret
     }
 }
+
+/* Success! This is the first "complete" implementation of a linked list!. As we
+didn't use Rc<T> or RefCell<T>, this implementation is proven correct at compile
+time and has no extra runtime checks. Sweet!
+
+It can do anything, iterate, append, remove, insert in the middle... right?
+
+Ha, ha. There's one crucial thing missing here...
+
+Try to use it. Actually try to use it for real. 
+
+Aside of toy examples, this version of Linked List cannot be used because it
+requires that all elements are valid for the lifetime 'a. Also memory is never
+freed when the items are removed. It's the caller responsibility.
+
+The worst problem is trying to prove to the compiler that the value you're
+trying to add will be valid for the lifetime of the chain. Effectively you'll
+end having a static lifetime on the objects.
+
+To showcase this problem, let's build a "manager" for this LinkedList1.
+*/
