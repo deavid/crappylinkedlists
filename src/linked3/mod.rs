@@ -189,3 +189,71 @@ end having a static lifetime on the objects.
 
 To showcase this problem, let's build a "manager" for this LinkedList1.
 */
+
+type Node2<'a> = LinkedList1<'a>;
+
+struct LinkedList2<'a> {
+    data: Vec<Node2<'a>>,
+    single: Node2<'a>,
+    next: Cell<Option<&'a Node2<'a>>>
+}
+
+impl<'a> LinkedList2<'a> {
+    /* Creating a new empty one seems easy: */
+    fn new() -> Self {
+        LinkedList2 {
+            data: vec![],
+            single: Node2::new(0, None),
+            next: Cell::new(None),
+        }
+    }
+    /* Finding the tail should be no problem: */
+    fn tail(&self) -> Option<&Node2<'a>> {
+        self.next.get().map(|n| n.tail())
+    }
+    /* What happens if we want to append something? */
+    fn append(&mut self, value: i64) {
+        let opttail = self.tail();
+        let _new_node = Node2::new(value, None);
+        let _next = match opttail {
+            None => &self.next,
+            Some(tail) => &tail.next,            
+        };
+        /* We hit our first problem: */
+        // next.replace(Some(&new_node)); //  <--- borrowed value does not live long enough
+        /* This is because new_node will be freed at the end of this function */
+
+        /* We could instead move the data into the struct, so it should have
+        ownership now. */
+        // self.data.push(new_node);
+
+        /* As we just pushed to the tail, we can just get a reference: */
+        // let ref_new = self.data.last();
+        // next.replace(ref_new);
+        
+        /* Now the data does persist but the reference is not guaranteed to
+        outlive. We could try with a regular member instead (even if the code is 
+        wrong, just for testing): */
+
+        // next.replace(Some(&self.single));
+
+        /* Same happens again. Even being a member of the struct does not 
+        guarantee that the address would be still valid later. We could replace
+        the value with another for example and that would broke our program. */
+    }
+}
+
+/*
+This happened because on first place we used references to build the structure.
+References should be proven correct for the stack they're built in. This usually
+means that most of them should be short lived, becuase they're tied to the stack
+frame that created them.
+
+If we wanted to fix this issue on the manager class we would need to use Rc<T>
+for reference counting, so it will keep track of the pointers that we made so
+the memory is not freed until all references are emptied. Worst case, they
+will never be freed. Or we could use Weak<T> as well. But the point of this
+exercise is to avoid Rc<T> as much as possible to experience the "real" Rust.
+
+So, we will go for another approach!
+*/
