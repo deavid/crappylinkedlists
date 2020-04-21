@@ -29,9 +29,25 @@ intentionally wrong. You've been warned.
   What if everything has to have a lifetime?
 - linked3: Using `Cell<T>` to handle interior mutability of next
   So we get our Reference Linked Lists and tweak them so we can actually write.
+- linked4: Adding Box to the mix
+  And we should finally get something that hopefully works.
+
+This is subtly based on another, better tutorial
+-----------------------------------------------------
+
+If you are into Rust you should know already about the Too Many Linked Lists
+tutorial:
+
+https://rust-unofficial.github.io/too-many-lists/index.html
+
+I really recommend going through that one. It's very good. This one can be seen
+as my own attempt of doing the same. Because coding is learned by practising,
+these are my own practices. I skipped a lot of explanations of things that I 
+already know, and I added my own thoughts (right or wrong) on why things are
+like they are. Hope this makes sense.
 
 Why is this code so bad? Doesn't make any sense
-================================================
+-----------------------------------------------------
 
 It doesn't. But for self-referencing types like a linked list do expose a lot
 of problems with the borrow checker. The easy way handling this would be going

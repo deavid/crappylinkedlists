@@ -1,6 +1,7 @@
 mod linked1;
 mod linked2;
 mod linked3;
+mod linked4;
 
 fn linked1_probes() {
     use linked1::*;
