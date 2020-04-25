@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 mod linked1;
 mod linked2;
 mod linked3;
@@ -23,6 +24,8 @@ fn linked3_probes() {
 }
 
 fn main() {
-    linked1_probes();
-    linked3_probes();
+    // linked1_probes();
+    // linked3_probes();
+    linked4::List::new(&[3,6,8,9]);
+
 }
