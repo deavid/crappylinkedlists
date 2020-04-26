@@ -195,6 +195,7 @@ a list of 1 or more items. Can we code this as a Rust enum?
 */
 
 /* Was going to use "None", but for practice, I guess we can reinvent the wheel */
+#[derive(Debug)]
 pub enum List {
     First(Box<LinkedList1>),
     Empty,
@@ -231,7 +232,7 @@ impl List {
         }
         let value = opt_value.unwrap();
         let mut first = LinkedList1::new_box(*value, None);
-        let mut cur = &mut first;
+        let cur = &mut first;
         for value in iter {
             cur.next = Some(LinkedList1::new_box(*value, None));
             /* this doesn't seem possible because Rust thinks we have access now
@@ -260,7 +261,7 @@ impl List {
     pub fn add_item(&mut self, value: i64) {
         let new = LinkedList1::new_box(value, None);
         if let List::First(list) = self {
-            let mut tail = list.tail_mut();
+            let tail = list.tail_mut();
             tail.next = Some(new);
         } else {
             // This feels strange. We can "replace" the contents just by
@@ -300,6 +301,7 @@ impl List {
             /* TODO: Add comments here... it's quite complex. */
             match self {
                 List::First(self_list) => {
+                    // This is expensive. It recurses finding the last item and takes long for big arrays
                     let tail = self_list.tail_mut();
                     tail.next = boxval;
                 },
@@ -313,4 +315,31 @@ impl List {
 
         }
     }
+
+    pub fn to_vec(&self) -> Vec<i64> {
+        match self {
+            List::First(l) => l.iter().collect(),
+            List::Empty => vec![],
+        }
+    }
 }
+
+// If drop is not implemented, does stack overflow when freeing big lists
+impl Drop for LinkedList1 {
+    fn drop(&mut self) {
+        let cur = self;
+        /* Just iterate, doing cur.next.take() will consume the item at the end
+        of the loop. */
+        while let Some(curnext) = cur.next.take() {
+            if curnext.next.is_some() {
+                *cur = *curnext;
+            } else {
+                return;
+            }
+        }
+    }
+}
+
+
+#[cfg(test)]
+mod test;
