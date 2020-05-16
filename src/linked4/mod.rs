@@ -5,10 +5,10 @@ Adding Box to the mix
 
 And we should finally get something that hopefully works.
 
-We will use Box<T> for "next". Why Box? Because we want full ownership on 
+We will use Box<T> for "next". Why Box? Because we want full ownership on
 the child, so we actually hold memory and we're responsible for freeing it.
 
-We cannot use Cell for next. Box<T> is not a Copy type. Box can implement 
+We cannot use Cell for next. Box<T> is not a Copy type. Box can implement
 clone if the type implements cloning. But implementing cloning would mean to
 recursively copy all its contents. This is terribly inefficient.
 
@@ -23,7 +23,6 @@ pub struct LinkedList1 {
     pub next: Option<Box<LinkedList1>>,
 }
 
-
 pub struct IterLinkedList1<'a> {
     /* Notice this one is still a reference. Why? Iterators are expected to be
     consumed. It doesn't make much sense to leave an iterator floating around
@@ -36,7 +35,7 @@ impl<'a> Iterator for IterLinkedList1<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let ret = self.cursor.map(|c| c.value);
-        /* Now we have to use Option::as_deref() so it swaps the Box with 
+        /* Now we have to use Option::as_deref() so it swaps the Box with
         a reference */
         self.cursor = match self.cursor {
             Some(node) => node.next.as_deref(),
@@ -46,21 +45,14 @@ impl<'a> Iterator for IterLinkedList1<'a> {
     }
 }
 
-
 impl LinkedList1 {
     /* This new function is now a bit pointless. But I'll keep it. */
     pub fn new(value: i64, next: Option<Box<LinkedList1>>) -> Self {
-        LinkedList1 {
-            value,
-            next,
-        }
+        LinkedList1 { value, next }
     }
     /* This will come handy sometime later */
     pub fn new_box(value: i64, next: Option<Box<LinkedList1>>) -> Box<Self> {
-        Box::new(LinkedList1 {
-            value,
-            next,
-        })
+        Box::new(LinkedList1 { value, next })
     }
     pub fn value(&self) -> i64 {
         self.value
@@ -69,7 +61,7 @@ impl LinkedList1 {
         self.value = value;
     }
     pub fn next(&self) -> Option<&Self> {
-        /* This one now is done by Option::as_deref, so it exchanges the Box 
+        /* This one now is done by Option::as_deref, so it exchanges the Box
         with a reference */
         self.next.as_deref()
     }
@@ -93,7 +85,7 @@ impl LinkedList1 {
     }
 
     /* And now we will need a mutable tail function, we lost Cell */
-    fn _tail_mut_1(&mut self) -> &mut Self { 
+    fn _tail_mut_1(&mut self) -> &mut Self {
         let mut cur = self;
         while let Some(next) = cur.next.as_deref_mut() {
             cur = next;
@@ -104,7 +96,7 @@ impl LinkedList1 {
         unimplemented!()
     }
 
-    fn tail_mut(&mut self) -> &mut Self { 
+    fn tail_mut(&mut self) -> &mut Self {
         let mut cur = self;
         if cur.next.is_some() {
             while let Some(curnext) = cur.next.as_deref_mut() {
@@ -129,13 +121,13 @@ impl LinkedList1 {
 
     /* This one will need now to be using &mut self. Also the item instead of a
     reference we will taking the full value and claiming full ownership. This
-    means the caller loses the value into the function. 
-    
-    For convenience I'll split this into two, one takes ownership, the other 
+    means the caller loses the value into the function.
+
+    For convenience I'll split this into two, one takes ownership, the other
     takes already a box. This might be convenient for later.
      */
     pub fn insert_into(&mut self, item: LinkedList1) {
-        let newnext = Box::new(item);        
+        let newnext = Box::new(item);
         self.insert(newnext);
     }
     pub fn insert(&mut self, item: Box<LinkedList1>) {
@@ -151,7 +143,7 @@ impl LinkedList1 {
         let oldnext = self.next.replace(item);
         if chain {
             let tail = self.tail_mut();
-            /* I had to do some weird descomposition in order to preserve 
+            /* I had to do some weird descomposition in order to preserve
             ownership. Not nice */
             if let Some(mut oldnext_val) = oldnext {
                 if oldnext_val.next.is_some() {
@@ -179,7 +171,7 @@ impl LinkedList1 {
             let ret_next = r.next.take();
             self.next = ret_next;
             /* Instead of a common return, we compose it separately to avoid
-            confusion for the borrow checker. This way it can clearly see that 
+            confusion for the borrow checker. This way it can clearly see that
             the reference "r" is used only once, and ret is no longer used. */
             Some(r)
         } else {
@@ -190,7 +182,7 @@ impl LinkedList1 {
 
 /*
 Success at last! It took four versions but this one is the first functional one.
-Still, we cannot hold zero items, but that's not a big deal. Anyway, we'll 
+Still, we cannot hold zero items, but that's not a big deal. Anyway, we'll
 create a wrapper class to manage this state.
 */
 
@@ -295,7 +287,7 @@ impl List {
             // for elem in list.iter().rev() {
             //     //      ^^^ the trait `std::iter::DoubleEndedIterator` is not implemented for `linked4::IterLinkedList1<'_>`
             // }
-            
+
             /* Turns out that for this we would need the full array anyway, so ... */
             let array: Vec<i64> = list.iter().collect();
             let mut cur: Option<LinkedList1> = None;
@@ -309,15 +301,13 @@ impl List {
                     // This is expensive. It recurses finding the last item and takes long for big arrays
                     let tail = self_list.tail_mut();
                     tail.next = boxval;
-                },
+                }
                 List::Empty => {
                     if let Some(v) = boxval {
                         *self = List::First(v);
                     }
                 }
             }
-
-
         }
     }
 
@@ -344,7 +334,6 @@ impl Drop for LinkedList1 {
         }
     }
 }
-
 
 #[cfg(test)]
 mod test;

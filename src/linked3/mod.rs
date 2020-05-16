@@ -151,7 +151,7 @@ impl<'a> LinkedList1<'a> {
         self.tail().insert(item)
     }
 
-    /* Remove next should be using next.take */ 
+    /* Remove next should be using next.take */
     fn remove_next(&self) -> Option<&'a LinkedList1<'a>> {
         let ret = self.next.take();
         if let Some(r) = ret {
@@ -177,7 +177,7 @@ It can do anything, iterate, append, remove, insert in the middle... right?
 
 Ha, ha. There's one crucial thing missing here...
 
-Try to use it. Actually try to use it for real. 
+Try to use it. Actually try to use it for real.
 
 Aside of toy examples, this version of Linked List cannot be used because it
 requires that all elements are valid for the lifetime 'a. Also memory is never
@@ -195,7 +195,7 @@ type Node2<'a> = LinkedList1<'a>;
 struct LinkedList2<'a> {
     data: Vec<Node2<'a>>,
     single: Node2<'a>,
-    next: Cell<Option<&'a Node2<'a>>>
+    next: Cell<Option<&'a Node2<'a>>>,
 }
 
 impl<'a> LinkedList2<'a> {
@@ -217,7 +217,7 @@ impl<'a> LinkedList2<'a> {
         let _new_node = Node2::new(value, None);
         let _next = match opttail {
             None => &self.next,
-            Some(tail) => &tail.next,            
+            Some(tail) => &tail.next,
         };
         /* We hit our first problem: */
         // next.replace(Some(&new_node)); //  <--- borrowed value does not live long enough
@@ -230,14 +230,14 @@ impl<'a> LinkedList2<'a> {
         /* As we just pushed to the tail, we can just get a reference: */
         // let ref_new = self.data.last();
         // next.replace(ref_new);
-        
+
         /* Now the data does persist but the reference is not guaranteed to
-        outlive. We could try with a regular member instead (even if the code is 
+        outlive. We could try with a regular member instead (even if the code is
         wrong, just for testing): */
 
         // next.replace(Some(&self.single));
 
-        /* Same happens again. Even being a member of the struct does not 
+        /* Same happens again. Even being a member of the struct does not
         guarantee that the address would be still valid later. We could replace
         the value with another for example and that would broke our program. */
     }
