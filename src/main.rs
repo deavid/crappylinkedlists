@@ -3,6 +3,7 @@ mod linked1;
 mod linked2;
 mod linked3;
 mod linked4;
+mod linked5;
 
 fn linked1_probes() {
     use linked1::*;
@@ -27,10 +28,10 @@ fn main() {
     // linked1_probes();
     // linked3_probes();
     // linked4::List::new(&[3,6,8,9]);
-    profile_linked4_concat_huge();
+    // profile_linked4_concat_huge();
 }
 
-
+/*
 fn profile_linked4_concat_huge() {
     /*
     This requires:
@@ -61,4 +62,4 @@ fn profile_linked4_concat_huge() {
     // Unwrap the mutex and stop the profiler
     PROFILER.lock().unwrap().stop().expect("Couldn't stop");
 
-}
+}*/

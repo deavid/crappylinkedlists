@@ -106,20 +106,25 @@ impl LinkedList1 {
 
     fn tail_mut(&mut self) -> &mut Self { 
         let mut cur = self;
-        while let Some(curnext) = cur.next.as_deref_mut() {
-            /* One trick to make it clear to the borrow checker is returning
-            the value *before* putting it into cur. Not ideal code but we avoid
-            using unsafe {} blocks. */
-            if curnext.next.is_some() {
-                cur = curnext;
-            } else {
-                return curnext;
+        if cur.next.is_some() {
+            while let Some(curnext) = cur.next.as_deref_mut() {
+                /* One trick to make it clear to the borrow checker is returning
+                the value *before* putting it into cur. Not ideal code but we avoid
+                using unsafe {} blocks. */
+                if curnext.next.is_some() {
+                    cur = curnext;
+                } else {
+                    return curnext;
+                }
             }
+            /* Here we need to tell the compiler that this code should never be
+            executed. We actually never expect this to happen. That would be a bug.
+            The "while let" it's really acting as a "loop {}" */
+            unreachable!()
+        } else {
+            /* This is required to handle the case where this node is the tail itself */
+            cur
         }
-        /* Here we need to tell the compiler that this code should never be
-        executed. We actually never expect this to happen. That would be a bug.
-        The "while let" it's really acting as a "loop {}" */
-        unreachable!()
     }
 
     /* This one will need now to be using &mut self. Also the item instead of a

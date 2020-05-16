@@ -31,6 +31,8 @@ intentionally wrong. You've been warned.
   So we get our Reference Linked Lists and tweak them so we can actually write.
 - linked4: Adding Box to the mix
   And we should finally get something that hopefully works.
+- linked5: Using `Rc<T>`to have prev and next pointers
+  There's no other way in Rust to have the same pointer stored permanently.
 
 This is subtly based on another, better tutorial
 -----------------------------------------------------
