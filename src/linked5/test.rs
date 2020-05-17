@@ -81,3 +81,20 @@ fn test_pop_last() {
     assert_eq!(empty, l.to_vec());
     assert_eq!(empty, l.to_vec_rev());
 }
+
+#[test]
+fn test_insert_first() {
+    let v = vec![3, 4, 0, 1, 2, 5, 6, 7, 8];
+    let fv = vec![9, 11, 15 ,32];
+    let mut l = List::from_vec(&v);
+    for elem in fv.iter().rev() {
+        l.insert_first(*elem);
+    }
+    let got: Vec<i64> = l.to_vec();
+    let want: Vec<i64> = fv.iter().cloned().chain(v).collect();
+    assert_eq!(want, got);
+    
+    let got: Vec<i64> = l.to_vec_rev();
+    let want: Vec<i64> = want.iter().rev().cloned().collect();
+    assert_eq!(want, got);
+}

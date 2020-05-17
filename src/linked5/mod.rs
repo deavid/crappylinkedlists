@@ -146,6 +146,34 @@ impl List {
         }
     }
 
+    pub fn insert_first(&mut self, value: i64) {
+        let mut other = Node {
+            value,
+            next: None,
+            prev: Weak::new(),
+        };
+
+        if let Some(first) = self.first.clone() {
+            let mut mutfirst = first.borrow_mut();
+            other.next = Some(first.clone());
+            let otherref = Rc::new(RefCell::new(other));
+            mutfirst.prev = Rc::downgrade(&otherref);
+            self.first = Some(otherref);
+        } else {
+            let otherref = Rc::new(RefCell::new(other));
+            self.first = Some(otherref.clone());
+            self.tail = Rc::downgrade(&otherref);
+        }
+    }
+
+    pub fn peek_front(&self) -> Option<i64> {
+        self.first.as_ref().map(|f| f.borrow().value)
+    }
+
+    pub fn peek_end(&self) -> Option<i64> {
+        self.tail.upgrade().map(|f| f.borrow().value)
+    }
+
     pub fn iter(&self) -> IterList {
         IterList {
             cursor: self.first.clone(),
