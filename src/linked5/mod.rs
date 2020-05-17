@@ -25,8 +25,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::rc::Weak;
 
-struct Node {
-    value: i64,
+pub struct Node {
+    pub value: i64,
     prev: Weak<RefCell<Node>>,
     next: Option<Rc<RefCell<Node>>>,
 }
@@ -214,6 +214,12 @@ impl List {
         }
     }
 
+    pub fn iter_mut(&mut self) -> IterListMut {
+        let cursor = self.first.clone(); 
+        IterListMut { 
+            cursor,                    
+        }
+    }
 }
 
 pub struct IterList {
@@ -293,5 +299,22 @@ impl Drop for Node {
     }
 }
 
+pub struct IterListMut {
+    cursor: Option<Rc<RefCell<Node>>>,
+}
+
+impl Iterator for IterListMut {
+    type Item = Rc<RefCell<Node>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(rc) = self.cursor.clone() {
+            self.cursor = rc.borrow().next.clone();
+            Some(rc)
+        } else {
+            None
+        }
+
+    }
+}
 #[cfg(test)]
 mod test;
