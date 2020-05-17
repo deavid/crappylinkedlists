@@ -40,12 +40,44 @@ fn test_concat_huge() {
     for _ in 1..10 {
         data.extend(&data_prev);
     }
-    let mut test = data.clone();
+    let mut test = Box::new(data.clone());
     let mut l = List::from_vec(&data);
-    for _ in 1..=1000 {
+    for _ in 1..=100 {
         l.concat(List::from_vec(&data));
-        test.extend(&data);
+        test.extend(data.iter());
     }
-    let lvec = l.to_vec();
+    println!("test1");
+    let lvec = Box::new(l.to_vec());
+    println!("test2");
     assert_eq!(test, lvec);
+    println!("test3");
+}
+
+#[test]
+fn test_pop_first() {
+    let v = vec![3, 4, 0, 1, 2, 5, 6, 7, 8];
+    let empty: Vec<i64> = Vec::new();
+    let mut l = List::from_vec(&v);
+    let mut got: Vec<i64> = Vec::new();
+    while let Some(val) = l.pop_first() {
+        got.push(val);
+    }
+    assert_eq!(v, got);
+    assert_eq!(empty, l.to_vec());
+    assert_eq!(empty, l.to_vec_rev());
+}
+
+#[test]
+fn test_pop_last() {
+    let v = vec![3, 4, 0, 1, 2, 5, 6, 7, 8];
+    let empty: Vec<i64> = Vec::new();
+    let want: Vec<i64> = v.iter().rev().cloned().collect();
+    let mut l = List::from_vec(&v);
+    let mut got: Vec<i64> = Vec::new();
+    while let Some(val) = l.pop_tail() {
+        got.push(val);
+    }
+    assert_eq!(want, got);
+    assert_eq!(empty, l.to_vec());
+    assert_eq!(empty, l.to_vec_rev());
 }

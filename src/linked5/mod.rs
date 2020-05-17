@@ -152,6 +152,40 @@ impl List {
             revcursor: self.tail.upgrade(),
         }
     }
+
+    pub fn pop_tail(&mut self) -> Option<i64> {
+        if let Some(tailref) = self.tail.upgrade() {
+            let mut tail = tailref.borrow_mut();
+            self.tail = tail.prev.clone();
+            if let Some(newtail) = tail.prev.upgrade() {
+                newtail.borrow_mut().next = None;
+            }
+            if self.tail.upgrade().is_none() {
+                self.first = None;
+            }
+            tail.prev = Weak::new();
+            Some(tail.value)
+        } else {
+            None
+        }
+    }
+    pub fn pop_first(&mut self) -> Option<i64> {
+        if let Some(firstref) = self.first.clone() {
+            let mut first = firstref.borrow_mut();
+            self.first = first.next.clone();
+            first.next = None;
+            if self.first.is_none() {
+                self.tail = Weak::new();
+            }
+            if let Some(newfirst) = first.next.clone() {
+                newfirst.borrow_mut().prev = Weak::new();
+            }
+            Some(first.value)
+        } else {
+            None
+        }
+    }
+
 }
 
 pub struct IterList {
@@ -209,6 +243,25 @@ impl DoubleEndedIterator for IterList {
             None => None,
         };
         ret
+    }
+}
+
+
+// If drop is not implemented, does stack overflow when freeing big lists
+impl Drop for Node {
+    fn drop(&mut self) {
+        if let Some(rc) = self.next.as_ref() {
+            let mut cur = rc.clone();
+            /* Just iterate, doing cur.next.take() will consume the item at the end
+            of the loop. */
+            while let Some(curnext) = cur.clone().borrow_mut().next.take() {
+                if curnext.borrow().next.is_some() {
+                    cur = curnext.clone();
+                } else {
+                    return;
+                }
+            }
+        }
     }
 }
 
