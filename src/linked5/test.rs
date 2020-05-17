@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn test_create() {
-    let want = vec![3, 4, 0, 1, 2, 5, 6, 7, 8];
+    let want = vec![3, 4, 0, 1, 2, 5, 6, 7, 8, 9];
     let l = List::from_vec(&want);
     let got = l.to_vec();
     assert_eq!(want, got);
@@ -12,7 +12,7 @@ fn test_create() {
 fn test_rev_iter() {
     let v = vec![3, 4, 0, 1, 2, 5, 6, 7, 8];
     let l = List::from_vec(&v);
-    let got: Vec<i64> = l.iter().rev().collect();
+    let got: Vec<i64> = l.to_vec_rev();
     let want: Vec<i64> = v.iter().rev().cloned().collect();
     assert_eq!(want, got);
 }

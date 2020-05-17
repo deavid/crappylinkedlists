@@ -23,6 +23,7 @@ So the only sane way is going with "next: Rc<RefCell<Node>>"
 use std::cell::Ref;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::rc::Weak;
 
 struct Node {
     value: i64,
@@ -30,9 +31,9 @@ struct Node {
     next: Option<Rc<RefCell<Node>>>,
 }
 
-struct List {
+pub struct List {
     first: Option<Rc<RefCell<Node>>>,
-    tail: Option<Rc<RefCell<Node>>>,
+    tail: Weak<RefCell<Node>>,
 }
 
 impl Node {
@@ -57,15 +58,20 @@ impl Node {
     }
 }
 
-impl List {
-    fn new() -> Self {
-        List {
+impl Default for List {
+    fn default() -> Self {
+        Self {
             first: None,
-            tail: None,
+            tail: Weak::new(),
         }
     }
+}
 
-    fn from_vec(v: &[i64]) -> Self {
+impl List {
+    pub fn new() -> Self {
+        Default::default()
+    }
+    pub fn slow_from_vec(v: &[i64]) -> Self {
         let mut l = Self::new();
         for n in v {
             l.append(*n);
@@ -73,16 +79,43 @@ impl List {
         l
     }
 
-    fn to_vec(&self) -> Vec<i64> {
+    pub fn from_vec(v: &[i64]) -> Self {
+        if v.is_empty() {
+            return List {first: None, tail: Weak::new()};
+        }
+        let mut nodes: Vec<Rc<RefCell<Node>>> = v
+            .iter()
+            .map(|n| Node {
+                value: *n,
+                prev: None,
+                next: None,
+            })
+            .map(|n| Rc::new(RefCell::new(n)))
+            .collect();
+        for i in 0..nodes.len()-1 {
+            nodes[i].borrow_mut().next = Some(nodes[i+1].clone());
+            nodes[i+1].borrow_mut().prev = Some(nodes[i].clone());
+        }
+        List {
+            first: Some(nodes[0].clone()),
+            tail: Rc::downgrade(&nodes[nodes.len()-1]),
+        }
+    }
+
+    pub fn to_vec(&self) -> Vec<i64> {
         self.iter().collect()
     }
 
-    fn concat(&mut self, other_list: List) {
+    pub fn to_vec_rev(&self) -> Vec<i64> {
+        self.iter().rev().collect()
+    }
+
+    pub fn concat(&mut self, other_list: List) {
         if other_list.first.is_none() {
             return;
         }
         let other = other_list.first.unwrap();
-        if let Some(tail) = self.tail.clone() {
+        if let Some(tail) = self.tail.upgrade() {
             let mut muttail = tail.borrow_mut();
             other.borrow_mut().prev = Some(tail.clone());
             self.tail = other_list.tail.clone();
@@ -93,30 +126,30 @@ impl List {
         }
     }
 
-    fn append(&mut self, value: i64) {
+    pub fn append(&mut self, value: i64) {
         let mut other = Node {
             value,
             next: None,
             prev: None,
         };
 
-        if let Some(tail) = self.tail.clone() {
+        if let Some(tail) = self.tail.upgrade() {
             let mut muttail = tail.borrow_mut();
             other.prev = Some(tail.clone());
             let otherref = Rc::new(RefCell::new(other));
-            self.tail = Some(otherref.clone());
+            self.tail = Rc::downgrade(&otherref);
             muttail.next = Some(otherref);
         } else {
             let otherref = Rc::new(RefCell::new(other));
             self.first = Some(otherref.clone());
-            self.tail = Some(otherref);
+            self.tail = Rc::downgrade(&otherref);
         }
     }
 
-    fn iter(&self) -> IterList {
+    pub fn iter(&self) -> IterList {
         IterList {
             cursor: self.first.clone(),
-            revcursor: self.tail.clone(),
+            revcursor: self.tail.upgrade(),
         }
     }
 }

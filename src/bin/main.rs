@@ -1,12 +1,7 @@
 #![allow(dead_code)]
-mod linked1;
-mod linked2;
-mod linked3;
-mod linked4;
-mod linked5;
 
 fn linked1_probes() {
-    use linked1::*;
+    use crappylinkedlists::linked1::*;
     size_l8();
     size_l8i();
     size_l2i();
@@ -20,14 +15,14 @@ fn linked1_probes() {
 }
 
 fn linked3_probes() {
-    use linked3::*;
+    use crappylinkedlists::linked3::*;
     test_cell();
 }
 
 fn main() {
-    // linked1_probes();
-    // linked3_probes();
-    // linked4::List::new(&[3,6,8,9]);
+    linked1_probes();
+    linked3_probes();
+    crappylinkedlists::linked4::List::new(&[3,6,8,9]);
     // profile_linked4_concat_huge();
 }
 
@@ -42,7 +37,7 @@ fn profile_linked4_concat_huge() {
     // Unlock the mutex and start the profiler
     PROFILER.lock().unwrap().start("./my-prof.profile").expect("Couldn't start");
 
-    use linked4::List;
+    use crappylinkedlists::linked4::List;
     // Testing performance here...
     let data_prev = vec![3,8,1,2,9,5,12,6,3,1,0,7,6,5,4,3,1,6,8,9,5,3,2,1,5,7,8,4,6];
     let mut data = data_prev.clone();

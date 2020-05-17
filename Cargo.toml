@@ -8,3 +8,8 @@ edition = "2018"
 
 [dependencies]
 cpuprofiler = "0.0.4"
+bencher = "0.1.5"
+
+[[bench]]
+name = "benchmark"
+harness = false
