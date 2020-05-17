@@ -27,7 +27,7 @@ use std::rc::Weak;
 
 struct Node {
     value: i64,
-    prev: Option<Rc<RefCell<Node>>>,
+    prev: Weak<RefCell<Node>>,
     next: Option<Rc<RefCell<Node>>>,
 }
 
@@ -41,7 +41,7 @@ impl Node {
     fn _new(value: i64) -> Self {
         Node {
             value,
-            prev: None,
+            prev: Weak::new(),
             next: None,
         }
     }
@@ -87,14 +87,14 @@ impl List {
             .iter()
             .map(|n| Node {
                 value: *n,
-                prev: None,
+                prev: Weak::new(),
                 next: None,
             })
             .map(|n| Rc::new(RefCell::new(n)))
             .collect();
         for i in 0..nodes.len()-1 {
             nodes[i].borrow_mut().next = Some(nodes[i+1].clone());
-            nodes[i+1].borrow_mut().prev = Some(nodes[i].clone());
+            nodes[i+1].borrow_mut().prev = Rc::downgrade(&nodes[i]);
         }
         List {
             first: Some(nodes[0].clone()),
@@ -117,7 +117,7 @@ impl List {
         let other = other_list.first.unwrap();
         if let Some(tail) = self.tail.upgrade() {
             let mut muttail = tail.borrow_mut();
-            other.borrow_mut().prev = Some(tail.clone());
+            other.borrow_mut().prev = Rc::downgrade(&tail);
             self.tail = other_list.tail.clone();
             muttail.next = Some(other);
         } else {
@@ -130,12 +130,12 @@ impl List {
         let mut other = Node {
             value,
             next: None,
-            prev: None,
+            prev: Weak::new(),
         };
 
         if let Some(tail) = self.tail.upgrade() {
             let mut muttail = tail.borrow_mut();
-            other.prev = Some(tail.clone());
+            other.prev = Rc::downgrade(&tail);
             let otherref = Rc::new(RefCell::new(other));
             self.tail = Rc::downgrade(&otherref);
             muttail.next = Some(otherref);
@@ -203,7 +203,7 @@ impl DoubleEndedIterator for IterList {
                     None
                 } else {
                     let bnode = node.borrow();
-                    bnode.prev.clone()
+                    bnode.prev.upgrade()
                 }
             }
             None => None,
